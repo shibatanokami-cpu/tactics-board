@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja" data-theme="grass">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>戦術ボード</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="戦術ボード">
+<meta name="theme-color" content="#1b1f27">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <button id="btnBoards" class="btn name" title="ボード一覧">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span id="boardName"></span>
+    </button>
+    <button id="btnUndo" class="btn icon" title="元に戻す"><svg viewBox="0 0 24 24"><path d="M9 5L4 10l5 5M4 10h10a5 5 0 010 10h-3"/></svg></button>
+    <button id="btnRedo" class="btn icon" title="やり直す"><svg viewBox="0 0 24 24"><path d="M15 5l5 5-5 5M20 10H10a5 5 0 000 10h3"/></svg></button>
+    <div class="seg" id="viewSeg">
+      <button data-view="full">全面</button>
+      <button data-view="att">敵陣</button>
+      <button data-view="def">自陣</button>
+      <button data-view="attBox">敵G前</button>
+      <button data-view="defBox">自G前</button>
+    </div>
+    <div class="spacer"></div>
+    <button id="matchWidget" class="btn match" title="タイマー・スコア">
+      <span id="mHalf">前半</span><span id="mTime">00:00</span><span id="mScore">0 - 0</span>
+    </button>
+    <div class="spacer"></div>
+    <button id="btnFormation" class="btn">陣形</button>
+    <button id="btnRoster" class="btn">メンバー</button>
+    <button id="btnExport" class="btn">書き出し</button>
+    <button id="btnSettings" class="btn">設定</button>
+    <button id="btnPresent" class="btn primary">プレゼン</button>
+  </header>
+
+  <aside id="tools">
+    <button class="tool on" data-tool="select" title="駒を動かす"><svg viewBox="0 0 24 24"><path d="M6 3l13 8-6 1.5L10 19z"/></svg><i>移動</i></button>
+    <button class="tool" data-tool="pen" title="ペン"><svg viewBox="0 0 24 24"><path d="M4 20l4-1L19 8l-3-3L5 16z"/></svg><i>ペン</i></button>
+    <button class="tool" data-tool="rect" title="四角ゾーン"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1" fill="currentColor" fill-opacity=".3"/></svg><i>四角</i></button>
+    <button class="tool" data-tool="ell" title="円ゾーン"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="6.5" fill="currentColor" fill-opacity=".3"/></svg><i>円</i></button>
+    <button class="tool" data-tool="text" title="テキスト"><svg viewBox="0 0 24 24"><path d="M5 6V5h14v1M12 5v14M9 19h6"/></svg><i>文字</i></button>
+    <button class="tool" data-tool="erase" title="消しゴム"><svg viewBox="0 0 24 24"><path d="M4 15l8-8 7 7-5 5H8zM11 19h9"/></svg><i>消す</i></button>
+    <hr>
+    <div id="colors">
+      <button class="sw on" data-c="#ffffff" style="--c:#ffffff"></button>
+      <button class="sw" data-c="#ffd400" style="--c:#ffd400"></button>
+      <button class="sw" data-c="#ff3b30" style="--c:#ff3b30"></button>
+      <button class="sw" data-c="#2f80ff" style="--c:#2f80ff"></button>
+      <button class="sw" data-c="#111111" style="--c:#111111"></button>
+    </div>
+    <div id="widths">
+      <button class="wd" data-w="0"><b style="--d:4px"></b></button>
+      <button class="wd on" data-w="1"><b style="--d:7px"></b></button>
+      <button class="wd" data-w="2"><b style="--d:11px"></b></button>
+    </div>
+    <button id="btnArrow" class="tool small on" title="線の先を矢印にする"><svg viewBox="0 0 24 24"><path d="M5 19L18 6M18 6h-8M18 6v8"/></svg><i>矢印</i></button>
+    <hr>
+    <button id="btnClear" class="tool small" title="このコマの線・ゾーン・文字を全部消す"><svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3M7 7l1 13h8l1-13"/></svg><i>全消し</i></button>
+  </aside>
+
+  <main id="stage">
+    <canvas id="cv"></canvas>
+    <div id="pop" hidden></div>
+    <div id="recBadge" hidden>● 録画中</div>
+  </main>
+
+  <aside id="bench">
+    <h3>ベンチ</h3>
+    <div id="benchList"></div>
+    <div id="addBtns">
+      <button id="addH" class="btn sm">＋自</button>
+      <button id="addA" class="btn sm">＋相手</button>
+      <button id="addB" class="btn sm">＋ボール</button>
+    </div>
+  </aside>
+
+  <footer id="frames">
+    <span class="lbl">コマ</span>
+    <div id="frameList"></div>
+    <button id="btnAddFrame" class="btn sm" title="今の配置をコピーして次のコマを作る">＋コマ追加</button>
+    <button id="btnDelFrame" class="btn sm" title="表示中のコマを削除">コマ削除</button>
+    <div class="spacer"></div>
+    <button id="btnSpeed" class="btn sm">1×</button>
+    <button id="btnPlay" class="btn primary"><svg viewBox="0 0 24 24" class="fill"><path d="M7 4l13 8-13 8z"/></svg><span>再生</span></button>
+  </footer>
+
+  <div id="presentBar">
+    <button id="pPrev" class="btn icon">◀</button>
+    <span id="pInfo">1 / 1</span>
+    <button id="pNext" class="btn icon">▶</button>
+    <button id="pPlay" class="btn primary">再生</button>
+    <button id="pExit" class="btn">✕ 終了</button>
+  </div>
+</div>
+
+<div id="toast" hidden></div>
+
+<dialog id="dlgAsk"><form method="dialog">
+  <h2 id="askTitle"></h2>
+  <p id="askText"></p>
+  <input id="askInput" type="text" autocomplete="off">
+  <div class="row rev"><button id="askOk" value="ok" class="btn primary">OK</button><button value="cancel" class="btn" formnovalidate>キャンセル</button></div>
+</form></dialog>
+
+<dialog id="dlgBoards">
+  <h2>ボード一覧</h2>
+  <div id="boardList" class="list"></div>
+  <div class="row"><button id="btnNewBoard" class="btn primary">＋ 新しいボード</button><div class="spacer"></div><button class="btn" data-close>閉じる</button></div>
+</dialog>
+
+<dialog id="dlgFormation">
+  <h2>フォーメーション</h2>
+  <div class="seg" id="fmTeam"><button data-t="h" class="on">自チーム</button><button data-t="a">相手チーム</button></div>
+  <div id="fmPresets"></div>
+  <h4>自由入力（GKを除いて後ろから。合計人数は自動で調整）</h4>
+  <div class="row"><input id="fmCustom" type="text" inputmode="text" placeholder="例: 3-4-2-1"><button id="fmApply" class="btn primary">配置</button></div>
+  <div class="row"><div class="spacer"></div><button class="btn" data-close>閉じる</button></div>
+</dialog>
+
+<dialog id="dlgRoster">
+  <h2>メンバー表（自チーム）</h2>
+  <p class="hint">登録した選手はピッチの駒に割り当てられます。出ていない選手は右のベンチに並び、ドラッグで駒に重ねると交代します。</p>
+  <div id="rosterList" class="list"></div>
+  <div class="row"><button id="btnAddPlayer" class="btn">＋ 選手を追加</button><button id="btnAssign" class="btn">上から順にスタメンへ割り当て</button><div class="spacer"></div><button class="btn primary" data-close>完了</button></div>
+</dialog>
+
+<dialog id="dlgSettings">
+  <h2>設定</h2>
+  <h4>テーマ</h4>
+  <div class="seg" id="setTheme"><button data-v="grass">芝</button><button data-v="dark">ダーク</button><button data-v="white">ホワイトボード</button></div>
+  <h4>チームカラー</h4>
+  <div class="grid2">
+    <label>自チーム <input type="color" data-col="h"></label>
+    <label>自チームGK <input type="color" data-col="hg"></label>
+    <label>相手 <input type="color" data-col="a"></label>
+    <label>相手GK <input type="color" data-col="ag"></label>
+  </div>
+  <h4>駒</h4>
+  <div class="row"><div class="seg" id="setSize"><button data-v="0.85">小</button><button data-v="1">中</button><button data-v="1.2">大</button></div>
+  <label class="chk"><input type="checkbox" id="setNames"> 名前を表示</label></div>
+  <div class="row"><div class="spacer"></div><button class="btn primary" data-close>完了</button></div>
+</dialog>
+
+<dialog id="dlgMatch">
+  <h2>タイマー・スコア</h2>
+  <div class="seg" id="mHalfSeg"><button data-v="1">前半</button><button data-v="2">後半</button></div>
+  <div id="mBig">00:00</div>
+  <div class="row center"><button id="mToggle" class="btn primary big">スタート</button><button id="mReset" class="btn big">タイマーを0に</button></div>
+  <div class="score">
+    <div><span>自チーム</span><button class="btn icon" data-s="h" data-d="-1">−</button><b id="sH">0</b><button class="btn icon" data-s="h" data-d="1">＋</button></div>
+    <div><span>相手</span><button class="btn icon" data-s="a" data-d="-1">−</button><b id="sA">0</b><button class="btn icon" data-s="a" data-d="1">＋</button></div>
+  </div>
+  <div class="row"><button id="mClear" class="btn danger">試合をリセット</button><div class="spacer"></div><button class="btn" data-close>閉じる</button></div>
+</dialog>
+
+<dialog id="dlgExport">
+  <h2>書き出し</h2>
+  <div class="col">
+    <button id="exImg" class="btn big">画像（表示中のコマ）</button>
+    <button id="exVid" class="btn big">動画（コマ送りアニメ）</button>
+  </div>
+  <div class="row"><div class="spacer"></div><button class="btn" data-close>閉じる</button></div>
+</dialog>
+
+<dialog id="dlgResult">
+  <h2>書き出し完了</h2>
+  <div id="resPreview"></div>
+  <div class="row"><button id="resShare" class="btn primary">共有・保存</button><a id="resDl" class="btn">ダウンロード</a><div class="spacer"></div><button class="btn" data-close>閉じる</button></div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
